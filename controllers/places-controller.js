@@ -1,7 +1,11 @@
+const mongoose = require('mongoose')
+const Place = require('../models/place')
+
 const HttpError = require('../models/http-error')
 const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
 const getCoordsForAddress = require('../util/location')
+const place = require('../models/place')
 
 
 let DUMMY_PLACES = [
@@ -18,15 +22,20 @@ let DUMMY_PLACES = [
   }
 ]
 
-const getPlaceById = (req, res, next) => {
+const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
-
-  const place = DUMMY_PLACES.find(p => {
-    return p.id === placeId
-  })
+  let place
+  try {
+    place = await Place.findById(placeId)
+  } catch (err) {
+    const error = new HttpError("something went wrong, could not find a place.", 500)
+    return next(error)
+  }
 
   if (!place) {
-    throw new HttpError('Could not find a place for provided id.', 404)
+    return next(
+      new HttpError('Could not find a place for provided id.', 404)
+    )
   }
 
   res.json({ place });
@@ -44,7 +53,7 @@ const getPlacesByUserId = (req, res, next) => {
     return next(new HttpError('Could not find a places for provided user id.', 404))
   }
 
-  res.json({ places });
+  res.json({ places: place.toObject({ getters: true }) });
 }
 
 const createPlace = async (req, res, next) => {
@@ -63,16 +72,21 @@ const createPlace = async (req, res, next) => {
     return next(error)
   }
 
-  const createdPlace = {
-    id: uuid(),
+  const createdPlace = new Place({
     title,
     description,
-    location: coordinates,
     address,
+    location: coordinates,
+    image: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ffarm7.staticflickr.com%2F6072%2F6119013601_44ca8a73bd_b.jpg&f=1&nofb=1",
     creator
-  }
+  })
 
-  DUMMY_PLACES.push(createdPlace)
+  try {
+    await createdPlace.save()
+  } catch (error) {
+    console.log(error)
+    return next(new HttpError('Creating place failed, pleace try again', 500))
+  }
 
   res.status(201).json({ place: createdPlace })
 }

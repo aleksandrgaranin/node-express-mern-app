@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose')
+const URL = require('./env')
 
 const placesRoutes = require('./routes/places-routes');
 const usersRouts = require('./routes/users-routes')
@@ -14,8 +16,8 @@ app.use('/api/places', placesRoutes)
 app.use('/api/users/', usersRouts)
 
 app.use((req, res, next) => {
-   const error = new HttpError('Could not find this route.', 404)
-   throw error
+  const error = new HttpError('Could not find this route.', 404)
+  throw error
 })
 
 app.use((error, req, res, next) => {
@@ -23,9 +25,16 @@ app.use((error, req, res, next) => {
     return next(error)
   }
   res.status(error.code || 500);
-  res.json({message: error.message || 'An unknown error occurred!'})
+  res.json({ message: error.message || 'An unknown error occurred!' })
 
 })
 
+const url = URL.URL
 
-app.listen(5000);
+mongoose.connect(url)
+  .then(
+    app.listen(5000)
+  )
+  .catch(
+    err => console.log(err)
+  )
