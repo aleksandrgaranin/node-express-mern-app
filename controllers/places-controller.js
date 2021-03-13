@@ -22,6 +22,8 @@ let DUMMY_PLACES = [
   }
 ]
 
+//------------------------GET PLACE BY ID--------------------------------------------------------
+
 const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
   let place
@@ -41,6 +43,7 @@ const getPlaceById = async (req, res, next) => {
   rres.json({ places: place.toObject({ getters: true }) });
 }
 
+//------------------------GET PLACE USER ID--------------------------------------------------------
 
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
@@ -59,6 +62,8 @@ const getPlacesByUserId = async (req, res, next) => {
 
   res.json({ places: places.map(place => place.toObject({ getters: true })) });
 }
+
+//------------------------CREATE PLACE--------------------------------------------------------
 
 const createPlace = async (req, res, next) => {
   const { title, description, address, creator } = req.body
@@ -95,7 +100,9 @@ const createPlace = async (req, res, next) => {
   res.status(201).json({ place: createdPlace })
 }
 
-const updatePlace = (req, res, next) => {
+//------------------------UPDATE PLACE--------------------------------------------------------
+
+const updatePlace = async (req, res, next) => {
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     console.log(errors)
@@ -105,17 +112,33 @@ const updatePlace = (req, res, next) => {
   const { title, description } = req.body
   const placeId = req.params.pid
 
-  const updatedPlace = { ...DUMMY_PLACES.find(p => p.id === placeId) }
+  let place
 
-  const placeIndex = DUMMY_PLACES.findIndex(p => p.id === placeId)
+  try {
+    place = await Place.findById(placeId)
+  } catch (err) {
+    console.log(err)
+    return next(new HttpError("Something went wrong, could not update place", 500))
+  }
 
-  updatedPlace.title = title
-  updatedPlace.description = description
+  // const updatedPlace = { ...DUMMY_PLACES.find(p => p.id === placeId) }
 
-  DUMMY_PLACES[placeIndex] = updatedPlace
+  // const placeIndex = DUMMY_PLACES.findIndex(p => p.id === placeId)
 
-  res.status(200).json({ place: updatedPlace })
+  place.title = title
+  place.description = description
+
+  try {
+    await place.save()
+  } catch (error) {
+    console.log(err)
+    return next(new HttpError("Something went wrong, could not update place", 500))
+  }
+
+  res.status(200).json({ place: place.toObject({getters: true}) })
 }
+
+//------------------------DELETE PLACE--------------------------------------------------------
 
 const deletePlace = (req, res, next) => {
   const placeId = req.params.pid
@@ -125,6 +148,8 @@ const deletePlace = (req, res, next) => {
   DUMMY_PLACES = DUMMY_PLACES.filter(p => p.id !== placeId)
   res.status(200).json({ message: 'Deleted place.' })
 }
+
+//------------------------EXPORTS--------------------------------------------------------
 
 exports.getPlaceById = getPlaceById
 exports.getPlacesByUserId = getPlacesByUserId
