@@ -7,6 +7,7 @@ const { validationResult } = require('express-validator')
 const getCoordsForAddress = require('../util/location')
 const place = require('../models/place');
 const User = require('../models/user')
+const user = require('../models/user')
 
 
 let DUMMY_PLACES = [
@@ -92,11 +93,12 @@ const createPlace = async (req, res, next) => {
   })
 
   let user;
+
   try {
     user = await User.findById(creator)
   } catch (error) {
     console.log(error)
-    return next(new HttpError('Creating place failed, pleace try again', 500))
+    return next(new HttpError('could not find user for provided id', 500))
   }
 
   if (!user) {
@@ -115,8 +117,8 @@ const createPlace = async (req, res, next) => {
     // Not standard is .push method of JS. 
     // This is mongoose push which establishing connection between the two models we are referring. 
     // Mongoose feature here and adds it to the place field of the User.
-    await user.save({ session: sess })
-    await sess.commitTransaction() // commit session
+    await user.save({ session: sess });
+    await sess.commitTransaction(); // commit session
 
   } catch (error) {
     console.log(error)
@@ -168,12 +170,36 @@ const deletePlace = async (req, res, next) => {
   let place
 
   try {
-    place = await Place.findById(placeId)
+    place = await Place.findById(placeId).populate('creator')
+    // .populate() - allows as to refer to a document stored  other collection 
+    // and work with data in that existing document
+    // work only with {ref:...} in the model.js
 
   } catch (err) {
     console.log(err)
     return next(new HttpError("Something went wrong, could not delete place", 500))
   }
+
+  if (!place) {
+    return next(new HttpError('Could not find place for thid id.', 404))
+  }
+
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    
+    await place.remove({ session: sess });
+
+    place.creator.places.pull(place) // removing place from the user
+    await place.creator.save( {session: sess} );
+    
+    await sess.commitTransaction();
+
+  } catch (error) {
+    console.log(error)
+    return next(new HttpError('Could not delete place, try again later', 500))
+  }
+
 
   try {
     place.remove()
