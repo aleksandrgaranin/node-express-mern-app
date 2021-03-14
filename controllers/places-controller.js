@@ -45,24 +45,25 @@ const getPlaceById = async (req, res, next) => {
   rres.json({ places: place.toObject({ getters: true }) });
 }
 
-//------------------------GET PLACE USER ID--------------------------------------------------------
+//------------------------GET PLACE BY USER ID--------------------------------------------------------
 
 const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
-  let places
+
+  let userWithPlaces
 
   try {
-    places = await Place.find({ creator: userId }).exec()
+    userWithPlaces = await User.findById(userId).populate('places')
   } catch (err) {
     console.log(err)
     return next(new HttpError("Can not find any matches.", 500))
   }
 
-  if (!places || places.length === 0) {
+  if (!userWithPlaces || userWithPlaces.places.length === 0) {
     return next(new HttpError('Could not find a places for provided user id.', 404))
   }
 
-  res.json({ places: places.map(place => place.toObject({ getters: true })) });
+  res.json({ places: userWithPlaces.places.map(place => place.toObject({ getters: true })) });
 }
 
 //------------------------CREATE PLACE--------------------------------------------------------
@@ -187,7 +188,7 @@ const deletePlace = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    
+
     await place.remove({ session: sess });
 
     place.creator.places.pull(place) // removing place from the user
@@ -201,12 +202,12 @@ const deletePlace = async (req, res, next) => {
   }
 
 
-  try {
-    place.remove()
-  } catch (err) {
-    console.log(err)
-    return next(new HttpError("Something went wrong, could not delete place", 500))
-  }
+  // try {
+  //   place.remove()
+  // } catch (err) {
+  //   console.log(err)
+  //   return next(new HttpError("Something went wrong, could not delete place", 500))
+  // }
 
   res.status(200).json({ message: 'Deleted place.' })
 }
