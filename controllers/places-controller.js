@@ -5,7 +5,8 @@ const HttpError = require('../models/http-error')
 const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
 const getCoordsForAddress = require('../util/location')
-const place = require('../models/place')
+const place = require('../models/place');
+const User = require('../models/user')
 
 
 let DUMMY_PLACES = [
@@ -90,8 +91,33 @@ const createPlace = async (req, res, next) => {
     creator
   })
 
+  let user;
   try {
-    await createdPlace.save()
+    user = await User.findById(creator)
+  } catch (error) {
+    console.log(error)
+    return next(new HttpError('Creating place failed, pleace try again', 500))
+  }
+
+  if (!user) {
+    const error = new HttpError('Could not find user for provided id', 404)
+    return next(error)
+  }
+
+  console.log(user)
+
+  try {
+    // Session/Transaction
+    const sess = await mongoose.startSession();//opens session
+    sess.startTransaction();
+    await createdPlace.save({ session: sess });
+    user.places.push(createdPlace);
+    // Not standard is .push method of JS. 
+    // This is mongoose push which establishing connection between the two models we are referring. 
+    // Mongoose feature here and adds it to the place field of the User.
+    await user.save({ session: sess })
+    await sess.commitTransaction() // commit session
+
   } catch (error) {
     console.log(error)
     return next(new HttpError('Creating place failed, pleace try again', 500))

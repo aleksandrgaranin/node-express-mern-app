@@ -31,9 +31,10 @@ const getUsers = async (req, res, next) => {
   try {
     users = await User.find({}, '-password')
   } catch (err) {
-    const error = new HttpError("something went wrong, could not find Users.", 500)
+    const error = new HttpError("Something went wrong, could not find Users.", 500)
     return next(error)
   }
+  
   if (!users) {
     return next(new HttpError('No users found.', 404))
   }
@@ -45,7 +46,7 @@ const getUsers = async (req, res, next) => {
 //------------------------SIGNUP USER--------------------------------------------------------
 
 const singupUser = async (req, res, next) => {
-  const { userName, email, password, places } = req.body
+  const { userName, email, password, } = req.body
 
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
@@ -73,7 +74,7 @@ const singupUser = async (req, res, next) => {
     email,
     password,
     image: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.0lSk-v5GFI2VgUcay9KbLwHaE7%26pid%3DApi&f=1",
-    places
+    places: []
   })
 
   try {
