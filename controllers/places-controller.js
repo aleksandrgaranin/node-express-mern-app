@@ -76,10 +76,11 @@ const createPlace = async (req, res, next) => {
     console.log(errors)
     return next(new HttpError("Invalid inputs passed, please check your data.", 422))
   }
+  
   let coordinates
   try {
     coordinates = await getCoordsForAddress(address)
-    // console.log('workin', coordinates)
+    // console.log('working', coordinates)
   } catch (error) {
     return next(error)
   }
@@ -192,22 +193,14 @@ const deletePlace = async (req, res, next) => {
     await place.remove({ session: sess });
 
     place.creator.places.pull(place) // removing place from the user
-    await place.creator.save( {session: sess} );
-    
+    await place.creator.save({ session: sess });
+
     await sess.commitTransaction();
 
   } catch (error) {
     console.log(error)
     return next(new HttpError('Could not delete place, try again later', 500))
   }
-
-
-  // try {
-  //   place.remove()
-  // } catch (err) {
-  //   console.log(err)
-  //   return next(new HttpError("Something went wrong, could not delete place", 500))
-  // }
 
   res.status(200).json({ message: 'Deleted place.' })
 }
