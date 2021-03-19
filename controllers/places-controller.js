@@ -42,7 +42,7 @@ const getPlaceById = async (req, res, next) => {
     )
   }
 
-  rres.json({ places: place.toObject({ getters: true }) });
+  res.json({ place: place.toObject({ getters: true }) });
 }
 
 //------------------------GET PLACE BY USER ID--------------------------------------------------------
