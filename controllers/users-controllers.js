@@ -1,10 +1,12 @@
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 const HttpError = require('../models/http-error')
 const User = require('../models/user')
 
 const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
+const { createPlace } = require('./places-controller')
 
 //------------------------GET USERS--------------------------------------------------------
 
@@ -56,7 +58,7 @@ const singupUser = async (req, res, next) => {
   try {
     hashedPassword = await bcrypt.hash(password, 12);
   } catch (error) {
-    return next(new HttpError("Could not crearte user, olease try again. ", 500))
+    return next(new HttpError("Could not crearte user, please try again. ", 500))
   }
 
   const createdUser = new User({
@@ -73,7 +75,18 @@ const singupUser = async (req, res, next) => {
     return next(new HttpError("Could nor create User, email already exist", 422))
   }
 
-  res.status(200).json({ user: createdUser.toObject({ getters: true }) })
+  let token
+  try {
+    token = jwt.sign({ userId: createdUser.id, email: createdUser.email },
+      'supersecret_dont_share',
+      { expiresIn: '1h' }
+    )
+
+  } catch (error) {
+    return next(new HttpError("Signing up failed, please try again. ", 500))
+  }
+
+  res.status(200).json({ userId: createdUser.id, email: createdUser.email, token: token })
 }
 
 //------------------------LOGIN USER--------------------------------------------------------
@@ -103,8 +116,29 @@ const loginUser = async (req, res, next) => {
   } catch (error) {
     return next(new HttpError("Could not log you in, plese check your credentials and try again.", 500))
   }
-  res.json({ message: "logged In", user: existingUser.toObject({ getters: true }) })
+
+  if (!isValidPassword) {
+    return next(new HttpError("Could not identify user, credentials seem to be wrong", 401))
+  }
+
+  let token
+  try {
+    token = jwt.sign({ userId: existingUser.id, email: existingUser.email },
+      'supersecret_dont_share',
+      { expiresIn: '1h' }
+    )
+
+  } catch (error) {
+    return next(new HttpError("Loggin in failed, please try again. ", 500))
+  }
+
+  res.json({
+    userId: existingUser.id,
+    email: existingUser.email,
+    token: teken
+  })
 }
+
 
 exports.getUsers = getUsers
 exports.singupUser = singupUser
