@@ -22,6 +22,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+#media
+/uploads/images
+
 # keys
 /util/location.js
 /ENV
