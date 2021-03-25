@@ -1,27 +1,10 @@
+const bcrypt = require('bcryptjs')
+
 const HttpError = require('../models/http-error')
 const User = require('../models/user')
 
 const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
-
-const DUMMY_USERS = [
-  {
-    id: "u1",
-    name: "Aleks Garanin",
-    email: "alek@gmail.com",
-    password: "testtest"
-    // image: "https://aleksandrgaranin.github.io/images/ag.jpg",
-    // places: 1,
-  },
-  {
-    id: "u2",
-    name: "Aleks G",
-    email: "alekgg@gmail.com",
-    password: "testtest"
-    // image: "https://aleksandrgaranin.github.io/images/ag.jpg",
-    // places: 2,
-  }
-]
 
 //------------------------GET USERS--------------------------------------------------------
 
@@ -69,10 +52,17 @@ const singupUser = async (req, res, next) => {
     return next(new HttpError("User exist already, please login instead", 422))
   }
 
+  let hashedPassword
+  try {
+    hashedPassword = await bcrypt.hash(password, 12);
+  } catch (error) {
+    return next(new HttpError("Could not crearte user, olease try again. ", 500))
+  }
+
   const createdUser = new User({
     name: userName,
     email,
-    password,
+    password: hashedPassword,
     image: req.file.path,
     places: []
   })
@@ -93,6 +83,7 @@ const loginUser = async (req, res, next) => {
 
   let existingUser
 
+
   try {
     existingUser = await User.findOne({ email: email })
   } catch (error) {
@@ -100,8 +91,17 @@ const loginUser = async (req, res, next) => {
     return next(new HttpError("Logging is faild, please try again later ", 500))
   }
 
-  if (!existingUser || existingUser.password !== password) {
+  if (!existingUser) {
     return next(new HttpError("Could not identify user, credentials seem to be wrong", 401))
+  }
+
+  let isValidPassword = false
+
+  try {
+    isValidPassword = await bcrypt.compare(password, existingUser.password)
+
+  } catch (error) {
+    return next(new HttpError("Could not log you in, plese check your credentials and try again.", 500))
   }
   res.json({ message: "logged In", user: existingUser.toObject({ getters: true }) })
 }
