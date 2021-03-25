@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const fs = require('fs')
 const Place = require('../models/place')
 
 const HttpError = require('../models/http-error')
@@ -10,19 +11,19 @@ const User = require('../models/user')
 const user = require('../models/user')
 
 
-let DUMMY_PLACES = [
-  {
-    id: 'p1',
-    title: 'Empire State Building',
-    description: 'One of the most famous scy  scrapers in the world!',
-    location: {
-      lat: 40.7484474,
-      lng: -73.9871516
-    },
-    address: '20 W 34th St, New York, NY 10001',
-    creator: 'u1'
-  }
-]
+// let DUMMY_PLACES = [
+//   {
+//     id: 'p1',
+//     title: 'Empire State Building',
+//     description: 'One of the most famous scy  scrapers in the world!',
+//     location: {
+//       lat: 40.7484474,
+//       lng: -73.9871516
+//     },
+//     address: '20 W 34th St, New York, NY 10001',
+//     creator: 'u1'
+//   }
+// ]
 
 //------------------------GET PLACE BY ID--------------------------------------------------------
 
@@ -90,7 +91,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ffarm7.staticflickr.com%2F6072%2F6119013601_44ca8a73bd_b.jpg&f=1&nofb=1",
+    image: req.file.path,
     creator
   })
 
@@ -186,6 +187,8 @@ const deletePlace = async (req, res, next) => {
     return next(new HttpError('Could not find place for thid id.', 404))
   }
 
+  const imagePath = place.image
+
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
@@ -201,6 +204,10 @@ const deletePlace = async (req, res, next) => {
     console.log(error)
     return next(new HttpError('Could not delete place, try again later', 500))
   }
+
+  fs.unlink(imagePath, err => {
+    console.log(err)
+  })
 
   res.status(200).json({ message: 'Deleted place.' })
 }

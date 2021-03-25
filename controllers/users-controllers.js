@@ -34,7 +34,7 @@ const getUsers = async (req, res, next) => {
     const error = new HttpError("Something went wrong, could not find Users.", 500)
     return next(error)
   }
-  
+
   if (!users) {
     return next(new HttpError('No users found.', 404))
   }
@@ -46,7 +46,7 @@ const getUsers = async (req, res, next) => {
 //------------------------SIGNUP USER--------------------------------------------------------
 
 const singupUser = async (req, res, next) => {
-  const { userName, email, password, } = req.body
+  const { userName, email, password } = req.body
 
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
@@ -73,7 +73,7 @@ const singupUser = async (req, res, next) => {
     name: userName,
     email,
     password,
-    image: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse2.mm.bing.net%2Fth%3Fid%3DOIP.0lSk-v5GFI2VgUcay9KbLwHaE7%26pid%3DApi&f=1",
+    image: req.file.path,
     places: []
   })
 
@@ -88,7 +88,7 @@ const singupUser = async (req, res, next) => {
 
 //------------------------LOGIN USER--------------------------------------------------------
 
-const loginUser = async(req, res, next) => {
+const loginUser = async (req, res, next) => {
   const { email, password } = req.body
 
   let existingUser
@@ -99,11 +99,11 @@ const loginUser = async(req, res, next) => {
     console.log(error)
     return next(new HttpError("Logging is faild, please try again later ", 500))
   }
-  
+
   if (!existingUser || existingUser.password !== password) {
-    return next( new HttpError("Could not identify user, credentials seem to be wrong", 401))
+    return next(new HttpError("Could not identify user, credentials seem to be wrong", 401))
   }
-  res.json({ message: "logged In", user: existingUser.toObject({getters: true})})
+  res.json({ message: "logged In", user: existingUser.toObject({ getters: true }) })
 }
 
 exports.getUsers = getUsers
