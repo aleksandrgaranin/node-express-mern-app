@@ -118,7 +118,7 @@ const loginUser = async (req, res, next) => {
   }
 
   if (!isValidPassword) {
-    return next(new HttpError("Could not identify user, credentials seem to be wrong", 401))
+    return next(new HttpError("Could not identify user, credentials seem to be wrong", 403))
   }
 
   let token

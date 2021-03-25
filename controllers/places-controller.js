@@ -77,7 +77,7 @@ const createPlace = async (req, res, next) => {
     console.log(errors)
     return next(new HttpError("Invalid inputs passed, please check your data.", 422))
   }
-  
+
   let coordinates
   try {
     coordinates = await getCoordsForAddress(address)
@@ -134,6 +134,7 @@ const createPlace = async (req, res, next) => {
 //------------------------UPDATE PLACE--------------------------------------------------------
 
 const updatePlace = async (req, res, next) => {
+
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     console.log(errors)
@@ -150,6 +151,10 @@ const updatePlace = async (req, res, next) => {
   } catch (err) {
     console.log(err)
     return next(new HttpError("Something went wrong, could not update place", 500))
+  }
+
+  if (place.creator.toString() !== req.userData.userId) {
+    return next(new HttpError('You are not allowed to edit this place.', 401))
   }
 
   place.title = title
@@ -184,7 +189,11 @@ const deletePlace = async (req, res, next) => {
   }
 
   if (!place) {
-    return next(new HttpError('Could not find place for thid id.', 404))
+    return next(new HttpError('Could not find place for this id.', 404))
+  }
+
+  if (place.creator.id !== req.userData.userId) { // becose of .populate method 
+    return next(new HttpError('You are not allowed to delete this place.', 401))
   }
 
   const imagePath = place.image
