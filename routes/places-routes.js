@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/:pid', placesControllers.getPlaceById);
 router.get('/user/:uid', placesControllers.getPlacesByUserId)
 
-router.use(chackAuth) // bloking middleware to continue to other routes
+router.use(chackAuth) // blocking middleware to continue to other routes
 
 router.post('/',
   fileUpload.single('image'),

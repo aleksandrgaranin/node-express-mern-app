@@ -11,20 +11,6 @@ const User = require('../models/user')
 const user = require('../models/user')
 
 
-// let DUMMY_PLACES = [
-//   {
-//     id: 'p1',
-//     title: 'Empire State Building',
-//     description: 'One of the most famous scy  scrapers in the world!',
-//     location: {
-//       lat: 40.7484474,
-//       lng: -73.9871516
-//     },
-//     address: '20 W 34th St, New York, NY 10001',
-//     creator: 'u1'
-//   }
-// ]
-
 //------------------------GET PLACE BY ID--------------------------------------------------------
 
 const getPlaceById = async (req, res, next) => {
@@ -70,13 +56,14 @@ const getPlacesByUserId = async (req, res, next) => {
 //------------------------CREATE PLACE--------------------------------------------------------
 
 const createPlace = async (req, res, next) => {
-  const { title, description, address, creator } = req.body
-
+  
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     console.log(errors)
     return next(new HttpError("Invalid inputs passed, please check your data.", 422))
   }
+  
+  const { title, description, address} = req.body
 
   let coordinates
   try {
@@ -92,13 +79,13 @@ const createPlace = async (req, res, next) => {
     address,
     location: coordinates,
     image: req.file.path,
-    creator
+    creator: req.userData.userId
   })
 
   let user;
 
   try {
-    user = await User.findById(creator)
+    user = await User.findById(req.userData.userId)
   } catch (error) {
     console.log(error)
     return next(new HttpError('could not find user for provided id', 500))
