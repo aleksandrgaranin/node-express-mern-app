@@ -26,6 +26,6 @@ yarn-error.log*
 /uploads/images
 
 # keys
-/util/location.js
 /ENV
 env.js
+/nodemon.json
