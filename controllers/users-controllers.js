@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
 const HttpError = require('../models/http-error')
 const User = require('../models/user')
 
-const uuid = require('uuid/v4')
+// const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
 const { createPlace } = require('./places-controller')
 
@@ -65,7 +65,7 @@ const singupUser = async (req, res, next) => {
     name: userName,
     email,
     password: hashedPassword,
-    image: req.file.path,
+    image: req.file.location,// maybe need req.gile.location
     places: []
   })
 

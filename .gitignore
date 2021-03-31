@@ -23,6 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 
 #media
+uploads/images
 
 # keys
 /ENV

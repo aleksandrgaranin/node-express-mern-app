@@ -41,9 +41,26 @@ app.use((req, res, next) => {
 
 app.use((error, req, res, next) => {
   if (req.file) {
-    fs.unlink(req.file.path, (err) => {
+
+    aws.config.update({
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      accsessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      region: process.env.AWS_REGION
+    })
+
+    const s3 = new aws.S3()
+    const key = file.location.split('/')[3]
+    // console.log(key)
+
+    s3.deleteObject({
+      Bucket: process.env.AWS_BUCKED_NAME,
+      Key: key
+    }, err => {
       console.log(err)
     })
+    // fs.unlink(req.file.path, (err) => {
+    //   console.log(err)
+    // })
   }
   if (res.headerSent) {
     return next(error)
@@ -55,7 +72,7 @@ app.use((error, req, res, next) => {
 
 mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.idapp.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`)
   .then(
-    app.listen(5000)
+    app.listen(process.env.PORT || 5000)
   )
   .catch(
     err => console.log(err)

@@ -1,14 +1,13 @@
 const mongoose = require('mongoose')
 const fs = require('fs')
 const Place = require('../models/place')
+const aws = require('aws-sdk')
 
 const HttpError = require('../models/http-error')
-const uuid = require('uuid/v4')
+// const uuid = require('uuid/v4')
 const { validationResult } = require('express-validator')
 const getCoordsForAddress = require('../util/location')
-const place = require('../models/place');
 const User = require('../models/user')
-const user = require('../models/user')
 
 
 //------------------------GET PLACE BY ID--------------------------------------------------------
@@ -56,14 +55,14 @@ const getPlacesByUserId = async (req, res, next) => {
 //------------------------CREATE PLACE--------------------------------------------------------
 
 const createPlace = async (req, res, next) => {
-  
+
   const errors = validationResult(req)
   if (!errors.isEmpty()) {
     console.log(errors)
     return next(new HttpError("Invalid inputs passed, please check your data.", 422))
   }
-  
-  const { title, description, address} = req.body
+
+  const { title, description, address } = req.body
 
   let coordinates
   try {
@@ -78,7 +77,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image: req.file.path,
+    image: req.file.location, //maybe need req.gile.location
     creator: req.userData.userId
   })
 
@@ -201,9 +200,27 @@ const deletePlace = async (req, res, next) => {
     return next(new HttpError('Could not delete place, try again later', 500))
   }
 
-  fs.unlink(imagePath, err => {
-    console.log(err)
+  aws.config.update({
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accsessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    region: process.env.AWS_REGION
   })
+
+  const s3 = new aws.S3()
+  const key = imagePath.split('/')[3]
+  // console.log(key)
+
+  s3.deleteObject({
+    Bucket: process.env.AWS_BUCKED_NAME,
+    Key: key
+  }
+    , err => {
+      console.log(err)
+    })
+
+  // fs.unlink(imagePath, err => {
+  //   console.log(err)
+  // })
 
   res.status(200).json({ message: 'Deleted place.' })
 }
