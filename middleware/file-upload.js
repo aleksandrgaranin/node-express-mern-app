@@ -1,6 +1,7 @@
 const multer = require('multer')
-const multerS3 = require('multer-s3')
+const multerS3 = require('multer-s3-transform')
 const aws = require('aws-sdk')
+const sharp = require('sharp')
 
 const { v1: uuidv1 } = require('uuid')
 
@@ -19,18 +20,26 @@ aws.config.update({
 const s3 = new aws.S3()
 
 const fileUpload = multer({
-  limits: 500000,
   storage: multerS3({
     s3: s3,
     bucket: process.env.AWS_BUCKED_NAME,
     acl: 'public-read',
-    metadata: (req, file, cb) => {
-      cb(null, { fildName: file.fieldname })
+
+    shouldTransform: (req, file, cb) => {
+      cb(null, /^image/i.test(file.mimetype))
+      // cb(null, { fildName: file.fieldname })
     },
-    key: (req, file, cb) => {
-      const ext = MIME_TYPE_MAP[file.mimetype];
-      cb(null, uuidv1() + '.' + ext)
-    }
+    transforms: [{
+      id: 'original',
+      key: (req, file, cb) => {
+        const ext = MIME_TYPE_MAP[file.mimetype];
+        cb(null, uuidv1() + '.' + ext)
+      },
+      transform: function (req, file, cb) {
+        cb(null, sharp().resize(896,672))
+        console.log(file.data)
+      }
+    }]
   }),
   fileFilter: (req, file, cb) => {
     const isValid = !!MIME_TYPE_MAP[file.mimetype];

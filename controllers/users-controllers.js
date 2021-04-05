@@ -65,7 +65,7 @@ const singupUser = async (req, res, next) => {
     name: userName,
     email,
     password: hashedPassword,
-    image: req.file.location,// maybe need req.gile.location
+    image: req.file.transforms[0].location,// maybe need req.gile.location
     places: []
   })
 

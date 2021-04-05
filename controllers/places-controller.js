@@ -63,7 +63,7 @@ const createPlace = async (req, res, next) => {
   }
 
   const { title, description, address } = req.body
-
+  // console.log(req.file)
   let coordinates
   try {
     coordinates = await getCoordsForAddress(address)
@@ -77,7 +77,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image: req.file.location, //maybe need req.gile.location
+    image: req.file.transforms[0].location, //maybe need req.gile.location
     creator: req.userData.userId
   })
 
